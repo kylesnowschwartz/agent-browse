@@ -1,0 +1,22 @@
+#!/bin/bash
+# Work Chrome profile wrapper
+# Install to /usr/local/bin/browser-work
+#
+# Customize BROWSER_PROFILE to match your Chrome profile directory.
+# Find your profiles with:
+#   ls "$HOME/Library/Application Support/Google/Chrome/" | grep -E "^(Default|Profile)"
+
+# REQUIRED: Set your Anthropic API key
+export ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-your-api-key-here}"
+
+# Chrome profile to use (check your Chrome profiles - this is just an example)
+export BROWSER_PROFILE="Profile 2"
+
+# Find and execute the npm-linked browser command
+BROWSER_BIN="$(npm root -g)/../bin/browser"
+if [ ! -x "$BROWSER_BIN" ]; then
+  echo "Error: browser command not found. Run 'npm link' in the agent-browse directory." >&2
+  exit 1
+fi
+
+exec "$BROWSER_BIN" "$@"

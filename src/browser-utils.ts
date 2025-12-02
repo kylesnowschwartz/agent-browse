@@ -73,13 +73,24 @@ export function getChromeUserDataDir(): string | undefined {
 }
 
 /**
+ * Gets the Chrome profile directory name based on BROWSER_PROFILE env var
+ * @returns Profile directory name (e.g., 'Default', 'Profile 1', 'Profile 2')
+ */
+export function getProfileDir(): string {
+  return process.env.BROWSER_PROFILE || 'Default';
+}
+
+/**
  * Prepares the Chrome profile by copying it to .chrome-profile directory (first run only)
  * This should be called before initializing Stagehand to avoid timeouts
  * @param pluginRoot The root directory of the plugin
+ * @returns The path to the temporary user data directory
  */
-export function prepareChromeProfile(pluginRoot: string) {
+export function prepareChromeProfile(pluginRoot: string): string {
   const sourceUserDataDir = getChromeUserDataDir();
-  const tempUserDataDir = join(pluginRoot, '.chrome-profile');
+  const profileDir = getProfileDir();
+  const profileSuffix = profileDir === 'Default' ? '' : `-${profileDir.replace(/ /g, '-').toLowerCase()}`;
+  const tempUserDataDir = join(pluginRoot, `.chrome-profile${profileSuffix}`);
 
   // Only copy if the temp directory doesn't exist yet
   if (!existsSync(tempUserDataDir)) {
@@ -87,12 +98,12 @@ export function prepareChromeProfile(pluginRoot: string) {
     const reset = '\x1b[0m';
 
     // Show copying message
-    console.log(`${dim}Copying Chrome profile to .chrome-profile/ (this may take a minute)...${reset}`);
+    console.log(`${dim}Copying Chrome profile "${profileDir}" to .chrome-profile${profileSuffix}/ (this may take a minute)...${reset}`);
 
     mkdirSync(tempUserDataDir, { recursive: true });
 
-    // Copy the Default profile directory (contains cookies, local storage, etc.)
-    const sourceDefaultProfile = join(sourceUserDataDir!, 'Default');
+    // Copy the specified profile directory (contains cookies, local storage, etc.)
+    const sourceDefaultProfile = join(sourceUserDataDir!, profileDir);
     const destDefaultProfile = join(tempUserDataDir, 'Default');
 
     if (existsSync(sourceDefaultProfile)) {
@@ -102,6 +113,8 @@ export function prepareChromeProfile(pluginRoot: string) {
       console.log(`${dim}No existing profile found, using fresh profile${reset}\n`);
     }
   }
+
+  return tempUserDataDir;
 }
 
  // Use CDP to take screenshot directly

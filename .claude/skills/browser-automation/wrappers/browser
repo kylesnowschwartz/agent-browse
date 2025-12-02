@@ -1,0 +1,21 @@
+#!/bin/bash
+# Default Chrome profile wrapper
+# Install to /usr/local/bin/browser
+#
+# After installing agent-browse with `npm link`, this wrapper adds
+# environment variables before calling the browser CLI.
+
+# REQUIRED: Set your Anthropic API key
+export ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-your-api-key-here}"
+
+# Use default Chrome profile
+export BROWSER_PROFILE="${BROWSER_PROFILE:-Default}"
+
+# Find and execute the npm-linked browser command
+BROWSER_BIN="$(npm root -g)/../bin/browser"
+if [ ! -x "$BROWSER_BIN" ]; then
+  echo "Error: browser command not found. Run 'npm link' in the agent-browse directory." >&2
+  exit 1
+fi
+
+exec "$BROWSER_BIN" "$@"

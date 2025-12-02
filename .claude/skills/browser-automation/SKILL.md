@@ -159,11 +159,76 @@ browser close
 
 **Persistent Browser**: The browser stays open between commands for faster sequential operations and to preserve browser state (cookies, sessions, etc.).
 
-**Reuse Existing**: If Chrome is already running on port 9222, it will reuse that instance.
+**Reuse Existing**: If Chrome is already running on the profile's CDP port, it will reuse that instance.
 
 **Minimized Launch**: Chrome opens off-screen (position -9999,-9999) to avoid disrupting workflow.
 
 **Safe Cleanup**: The browser only closes when you explicitly call the `close` command.
+
+## Chrome Profile Support
+
+This fork supports multiple Chrome profiles via the `BROWSER_PROFILE` environment variable. Each profile uses a separate CDP port to allow simultaneous operation.
+
+### Environment Variable
+
+Set `BROWSER_PROFILE` to specify which Chrome profile to use:
+
+```bash
+# Use default profile
+browser navigate https://example.com
+
+# Use a specific profile
+BROWSER_PROFILE="Profile 2" browser navigate https://example.com
+```
+
+### Profile Directories
+
+Chrome stores profiles in directories like:
+- `Default` - The default profile
+- `Profile 1`, `Profile 2`, etc. - Additional profiles
+
+To find your profiles and their associated accounts:
+```bash
+# macOS
+for p in Default "Profile 1" "Profile 2"; do
+  echo "=== $p ==="
+  jq -r '.account_info[0].email // "(not signed in)"' \
+    "$HOME/Library/Application Support/Google/Chrome/$p/Preferences" 2>/dev/null
+done
+```
+
+### Creating Wrapper Scripts
+
+For convenience, create wrapper scripts in `/usr/local/bin/` for each profile.
+Example wrapper scripts are provided in the `wrappers/` directory within this skill.
+
+To install them:
+
+```bash
+# Copy wrappers to /usr/local/bin
+sudo cp wrappers/browser wrappers/browser-work wrappers/browser-home /usr/local/bin/
+sudo chmod +x /usr/local/bin/browser /usr/local/bin/browser-work /usr/local/bin/browser-home
+
+# Edit each to set your ANTHROPIC_API_KEY and BROWSER_PROFILE
+```
+
+See `wrappers/README.md` for detailed instructions on finding your Chrome profiles.
+
+### Cache Directories
+
+Profiles are copied on first use to avoid modifying your real Chrome data:
+- Default profile: `.chrome-profile/`
+- Other profiles: `.chrome-profile-{profile-name}/` (e.g., `.chrome-profile-profile-2/`)
+
+To force a fresh profile copy, delete the relevant `.chrome-profile*` directory.
+
+### CDP Ports
+
+Each profile uses a different Chrome DevTools Protocol port:
+- Default: 9222
+- Other profiles: 9223-9322 (based on profile name hash)
+
+This allows running multiple profiles simultaneously without conflicts.
 
 ## Best Practices
 

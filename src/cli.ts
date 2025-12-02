@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, writeFileSync, readFileSync, unlinkSync } from '
 import { spawn, ChildProcess } from 'child_process';
 import { join, resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { findLocalChrome, prepareChromeProfile, takeScreenshot } from './browser-utils.js';
+import { findLocalChrome, prepareChromeProfile, takeScreenshot, getProfileDir } from './browser-utils.js';
 import { z } from 'zod';
 import dotenv from 'dotenv';
 
@@ -40,6 +40,17 @@ let currentPage: any = null;
 let chromeProcess: ChildProcess | null = null;
 let weStartedChrome = false; // Track if we launched Chrome vs. reused existing
 
+/**
+ * Calculate CDP port based on profile to avoid conflicts between simultaneous sessions
+ */
+function getCdpPort(): number {
+  const profileDir = getProfileDir();
+  if (profileDir === 'Default') return 9222;
+  // Hash profile name to get a consistent port offset
+  const hash = profileDir.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return 9222 + (hash % 100) + 1; // Ports 9223-9322
+}
+
 async function initBrowser() {
   if (stagehandInstance) {
     return { stagehand: stagehandInstance, page: currentPage };
@@ -50,8 +61,8 @@ async function initBrowser() {
     throw new Error('Could not find Chrome installation');
   }
 
-  const cdpPort = 9222;
-  const tempUserDataDir = join(PLUGIN_ROOT, '.chrome-profile');
+  const cdpPort = getCdpPort();
+  const tempUserDataDir = prepareChromeProfile(PLUGIN_ROOT);
 
   // Check if Chrome is already running on the CDP port
   let chromeReady = false;
@@ -149,7 +160,7 @@ async function initBrowser() {
 }
 
 async function closeBrowser() {
-  const cdpPort = 9222;
+  const cdpPort = getCdpPort();
   const pidFilePath = join(PLUGIN_ROOT, '.chrome-pid');
 
   // First, try to close via Stagehand if we have an instance in this process
@@ -401,9 +412,6 @@ async function screenshot() {
 
 // Main CLI handler
 async function main() {
-  // Prepare Chrome profile on first run
-  prepareChromeProfile(PLUGIN_ROOT);
-
   const args = process.argv.slice(2);
   const command = args[0];
 

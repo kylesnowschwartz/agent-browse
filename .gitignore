@@ -1,3 +1,6 @@
+# Include .claude directory (overrides global gitignore)
+!.claude/
+
 # Dependencies
 node_modules/
 
