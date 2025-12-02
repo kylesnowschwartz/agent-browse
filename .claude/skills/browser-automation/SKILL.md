@@ -295,6 +295,17 @@ browser close
 
 **Port 9222 in use**: Another Chrome debugging session is running. Close it or wait for timeout
 
+**First-run profile copy race condition**: When a profile is copied for the first time, you may see `Cannot read properties of undefined (reading 'page')`. This is a known race condition where the profile copy completes but Stagehand's page initialization races. Simply retry the command - subsequent attempts will succeed since the profile is already copied.
+
+**Stale Chrome instance**: If commands fail with the "page undefined" error even after retry, a Chrome process may be holding the CDP port but disconnected from Stagehand. Kill it and retry:
+```bash
+# For default profile (port 9222)
+lsof -ti :9222 | xargs kill
+
+# For other profiles, check which port (e.g., 9226 for Profile 2)
+lsof -ti :9226 | xargs kill
+```
+
 For detailed examples, see [EXAMPLES.md](EXAMPLES.md).
 For API reference and technical details, see [REFERENCE.md](REFERENCE.md).
 

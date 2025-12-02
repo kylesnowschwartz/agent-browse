@@ -81,6 +81,7 @@ async function initBrowser() {
     chromeProcess = spawn(chromePath, [
       `--remote-debugging-port=${cdpPort}`,
       `--user-data-dir=${tempUserDataDir}`,
+      '--disable-session-crashed-bubble', // Suppress "Chrome didn't shut down correctly" dialog
       '--window-position=-9999,-9999', // Launch minimized off-screen
       '--window-size=1250,900',
     ], {
@@ -282,7 +283,9 @@ async function verifyIsChromeProcess(pid: number): Promise<boolean> {
 async function navigate(url: string) {
   try {
     const { page } = await initBrowser();
-    await page.goto(url);
+    // Wait for network to be idle to ensure page is fully loaded
+    // This helps avoid Stagehand's hardcoded 3500ms click timeout on slow pages
+    await page.goto(url, { waitUntil: 'networkidle', timeout: 60000 });
     const screenshotPath = await takeScreenshot(page, PLUGIN_ROOT);
     return {
       success: true,
@@ -300,7 +303,8 @@ async function navigate(url: string) {
 async function act(action: string) {
   try {
     const { page } = await initBrowser();
-    await page.act(action);
+    // Use longer DOM settle timeout for SPAs and dynamic content
+    await page.act({ action, domSettleTimeoutMs: 10000 });
     const screenshotPath = await takeScreenshot(page, PLUGIN_ROOT);
     return {
       success: true,

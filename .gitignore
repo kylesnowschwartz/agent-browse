@@ -32,8 +32,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Chrome automation profile
+# Chrome automation profiles (including numbered profiles)
 .chrome-profile/
+.chrome-profile-*/
 
 # Browser screenshots and custom scripts (ignore contents but keep directory structure)
 agent/browser_screenshots/*
@@ -47,3 +48,4 @@ agent/downloads/*
 
 # Stagehand Cache
 tmp/.cache/.chrome-pid
+.chrome-pid

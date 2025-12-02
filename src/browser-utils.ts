@@ -117,7 +117,7 @@ export function prepareChromeProfile(pluginRoot: string): string {
   return tempUserDataDir;
 }
 
- // Use CDP to take screenshot directly
+// Take full-page screenshot using Playwright's native method
 export async function takeScreenshot(page: Page, pluginRoot: string) {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const screenshotDir = join(pluginRoot, 'agent/browser_screenshots');
@@ -128,37 +128,30 @@ export async function takeScreenshot(page: Page, pluginRoot: string) {
     mkdirSync(screenshotDir, { recursive: true });
   }
 
- const context = page.context();
- const client = await context.newCDPSession(page);
- const screenshotResult = await client.send('Page.captureScreenshot', {
-   format: 'png',
-   quality: 100,
-   fromSurface: false
- });
+  const fs = await import('fs');
+  const sharp = (await import('sharp')).default;
 
- // Save the base64 screenshot data to file with resizing if needed
- const fs = await import('fs');
- const sharp = (await import('sharp')).default;
- const buffer = Buffer.from(screenshotResult.data, 'base64');
+  // Use Playwright's fullPage option - handles scrolling and stitching automatically
+  const buffer = await page.screenshot({ fullPage: true, type: 'png' });
 
- // Check image dimensions
- const image = sharp(buffer);
- const metadata = await image.metadata();
- const { width, height } = metadata;
+  // Check image dimensions and resize if needed
+  const image = sharp(buffer);
+  const metadata = await image.metadata();
+  const { width, height } = metadata;
 
- let finalBuffer: Buffer = buffer;
+  let finalBuffer: Buffer = buffer;
 
- // Only resize if image exceeds 2000x2000
- if (width && height && (width > 2000 || height > 2000)) {
-   finalBuffer = await sharp(buffer)
-     .resize(2000, 2000, {
-       fit: 'inside',
-       withoutEnlargement: true
-     })
-     .png()
-     .toBuffer();
- }
+  // Resize if image exceeds 2000x2000
+  if (width && height && (width > 2000 || height > 2000)) {
+    finalBuffer = await sharp(buffer)
+      .resize(2000, 2000, {
+        fit: 'inside',
+        withoutEnlargement: true
+      })
+      .png()
+      .toBuffer();
+  }
 
- fs.writeFileSync(screenshotPath, finalBuffer);
- return screenshotPath;
+  fs.writeFileSync(screenshotPath, finalBuffer);
+  return screenshotPath;
 }
