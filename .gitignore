@@ -49,3 +49,6 @@ agent/downloads/*
 # Stagehand Cache
 tmp/.cache/.chrome-pid
 .chrome-pid
+
+# Local setup state (use setup.example.json as template)
+.claude/skills/browser-automation/setup.json
