@@ -81,7 +81,7 @@ async function initBrowser() {
     chromeProcess = spawn(chromePath, [
       `--remote-debugging-port=${cdpPort}`,
       `--user-data-dir=${tempUserDataDir}`,
-      '--disable-session-crashed-bubble', // Suppress "Chrome didn't shut down correctly" dialog
+      '--hide-crash-restore-bubble', // Suppress "Chrome didn't shut down correctly" dialog
       '--window-position=-9999,-9999', // Launch minimized off-screen
       '--window-size=1250,900',
     ], {

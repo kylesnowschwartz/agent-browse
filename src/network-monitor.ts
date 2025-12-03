@@ -44,7 +44,7 @@ async function main() {
   const chromeProcess = spawn(chromePath, [
     `--remote-debugging-port=${cdpPort}`,
     `--user-data-dir=${tempUserDataDir}`,
-    '--disable-session-crashed-bubble',
+    '--hide-crash-restore-bubble',
   ], {
     stdio: ['ignore', 'pipe', 'pipe'],
     detached: false,
